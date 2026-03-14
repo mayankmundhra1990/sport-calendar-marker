@@ -12,6 +12,9 @@ const geistSans = Geist({
 export const metadata: Metadata = {
   title: "Sport Calendar Marker",
   description: "Never miss a match — add your favorite teams' schedules to your calendar",
+  verification: {
+    google: "psfdqrFvNR_g2cjLdmPb_fio2IoDkwM2BDDaFSh13bg",
+  },
 };
 
 export default function RootLayout({
