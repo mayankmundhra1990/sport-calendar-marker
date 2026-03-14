@@ -43,3 +43,6 @@ next-env.d.ts
 # claude code session data
 .claude/plans/
 .claude/scheduled-tasks/
+
+# Local Netlify folder
+.netlify
