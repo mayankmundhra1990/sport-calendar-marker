@@ -13,17 +13,17 @@ export async function GET(request: NextRequest) {
   const teamIds = new Set(teamsParam.split(","));
 
   // Find which leagues we need to fetch by checking all configured leagues
-  const leaguesToFetch: { id: string; season: string }[] = [];
+  const leaguesToFetch: { id: string; season: string; totalRounds: number }[] = [];
   for (const sport of SPORTS) {
     for (const league of sport.leagues) {
-      leaguesToFetch.push({ id: league.id, season: league.season });
+      leaguesToFetch.push({ id: league.id, season: league.season, totalRounds: league.totalRounds });
     }
   }
 
   try {
     // Fetch events from all leagues
     const results = await Promise.all(
-      leaguesToFetch.map((l) => getSeasonEvents(l.id, l.season).catch(() => []))
+      leaguesToFetch.map((l) => getSeasonEvents(l.id, l.season, l.totalRounds).catch(() => []))
     );
 
     // Filter to only matches involving requested teams
