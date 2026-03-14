@@ -27,6 +27,11 @@ export default function RootLayout({
           <main className="mx-auto max-w-6xl px-4 py-8">
             {children}
           </main>
+          <footer className="border-t border-gray-200 mt-12 py-6 text-center text-sm text-gray-500">
+            <a href="/privacy" className="hover:text-gray-700 hover:underline">
+              Privacy Policy
+            </a>
+          </footer>
         </PreferencesProvider>
       </body>
     </html>
