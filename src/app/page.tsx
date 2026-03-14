@@ -38,6 +38,12 @@ export default function Home() {
       <div className={!isConnected ? "opacity-50 pointer-events-none select-none" : ""}>
         <SportSelector />
       </div>
+
+      <div className="mt-12 pt-6 border-t border-gray-200 text-center text-sm text-gray-400">
+        <a href="/privacy" className="hover:text-gray-600 hover:underline">
+          Privacy Policy
+        </a>
+      </div>
     </div>
   );
 }
