@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import SportSelector from "@/components/SportSelector";
 import GoogleAuthButton from "@/components/GoogleAuthButton";
@@ -24,7 +25,7 @@ const HOW_IT_WORKS = [
   },
 ];
 
-export default function Home() {
+function HomeContent() {
   const { isConnected } = useGoogleAuth();
   const searchParams = useSearchParams();
   const authError = searchParams.get("error");
@@ -108,5 +109,13 @@ export default function Home() {
 
       <SportSelector />
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense>
+      <HomeContent />
+    </Suspense>
   );
 }
