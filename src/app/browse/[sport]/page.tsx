@@ -1,7 +1,7 @@
 "use client";
 
-import { use, useState } from "react";
-import { SPORTS } from "@/lib/constants";
+import { use, useState, useEffect } from "react";
+import { SPORTS, SPORT_COLORS } from "@/lib/constants";
 import LeaguePicker from "@/components/LeaguePicker";
 import TeamBrowser from "@/components/TeamBrowser";
 import PlayerBrowser from "@/components/PlayerBrowser";
@@ -13,6 +13,15 @@ export default function BrowseSport({ params }: { params: Promise<{ sport: strin
   const { sport: sportId } = use(params);
   const sport = SPORTS.find((s) => s.id === sportId);
   const [selectedLeagueId, setSelectedLeagueId] = useState(sport?.leagues[0]?.id || "");
+  const color = SPORT_COLORS[sportId] ?? SPORT_COLORS["football"];
+
+  // Dynamic page title
+  useEffect(() => {
+    if (sport) {
+      document.title = `${sport.name} Teams & Leagues — Sport Calendar Marker`;
+    }
+    return () => { document.title = "Sport Calendar Marker — Never Miss a Match"; };
+  }, [sport]);
 
   if (!sport) {
     return (
@@ -29,17 +38,26 @@ export default function BrowseSport({ params }: { params: Promise<{ sport: strin
 
   return (
     <div>
-      <Link href="/" className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-4">
-        <ArrowLeft className="w-4 h-4" />
+      <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg px-3 py-2 -ml-3 mb-3 min-h-[44px] transition-colors">
+        <ArrowLeft className="w-4 h-4" aria-hidden="true" />
         Back to sports
       </Link>
 
-      <div className="mb-6">
+      {/* Sport header with accent */}
+      <div
+        className="rounded-xl p-5 mb-6 border"
+        style={{
+          background: `linear-gradient(135deg, ${color.accent}0d 0%, #ffffff 100%)`,
+          borderColor: `${color.accent}30`,
+          borderLeftWidth: 4,
+          borderLeftColor: color.accent,
+        }}
+      >
         <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-          {sport.icon} {sport.name}
+          <span aria-hidden="true">{sport.icon}</span> {sport.name}
         </h1>
-        <p className="text-gray-500 mt-1">
-          {sportId === "tennis" ? "Select players to follow" : "Select teams to follow"}
+        <p className="text-sm mt-1" style={{ color: color.accent }}>
+          {sportId === "tennis" ? "Select players to follow" : `${sport.leagues.length} leagues available`}
         </p>
       </div>
 
@@ -47,22 +65,19 @@ export default function BrowseSport({ params }: { params: Promise<{ sport: strin
         <PlayerBrowser />
       ) : (
         <>
-          {/* Global team search */}
           <TeamSearch sport={sportId} />
 
-          {/* Divider between search and browse */}
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-gray-200" />
             </div>
             <div className="relative flex justify-center">
-              <span className="bg-white px-3 text-xs text-gray-400 uppercase tracking-wide">
+              <span className="bg-gray-50 px-3 text-xs text-gray-400 uppercase tracking-wide">
                 or browse by league
               </span>
             </div>
           </div>
 
-          {/* League picker + team browser */}
           <div className="mb-6">
             <LeaguePicker
               leagues={sport.leagues}

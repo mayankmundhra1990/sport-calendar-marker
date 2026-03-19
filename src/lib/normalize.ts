@@ -48,7 +48,7 @@ export function normalizeEvent(raw: SportsDBEvent): Match {
     leagueName: raw.strLeague,
     homeTeam,
     awayTeam,
-    dateTime: raw.strTimestamp,
+    dateTime: raw.strTimestamp || (raw.dateEvent && raw.strTime ? `${raw.dateEvent}T${raw.strTime}Z` : ""),
     date: raw.dateEvent,
     time: raw.strTime || "00:00:00",
     venue,

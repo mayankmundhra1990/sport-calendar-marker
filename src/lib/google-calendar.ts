@@ -57,6 +57,15 @@ export async function createCalendarEvent(accessToken: string, match: Match): Pr
   return result.data.id!;
 }
 
+export async function getGoogleUserInfo(accessToken: string): Promise<{ id: string; email: string }> {
+  const res = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!res.ok) throw new Error("Failed to fetch Google user info");
+  const data = await res.json();
+  return { id: data.id, email: data.email };
+}
+
 export async function deleteCalendarEvent(accessToken: string, eventId: string): Promise<void> {
   const client = getOAuth2Client();
   client.setCredentials({ access_token: accessToken });

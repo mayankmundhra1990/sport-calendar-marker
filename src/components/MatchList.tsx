@@ -30,10 +30,10 @@ export default function MatchList({ matches }: MatchListProps) {
     <div className="space-y-6">
       {sortedDates.map((date) => (
         <div key={date}>
-          <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
+          <h3 className="sticky top-[57px] z-10 bg-gray-50/95 backdrop-blur-sm text-sm font-semibold text-gray-500 uppercase tracking-wide py-2 mb-2 -mx-4 px-4">
             {formatDateHeader(date)}
           </h3>
-          <div className="space-y-2">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
             {grouped[date].map((match) => (
               <MatchCard key={match.id} match={match} />
             ))}

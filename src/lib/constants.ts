@@ -83,7 +83,7 @@ export const TENNIS_PLAYERS: TennisPlayer[] = [
   { id: "player_deminaur", name: "Alex De Minaur", country: "Australia", tour: "atp", leagueId: "4464", keyword: "De Minaur" },
   { id: "player_fritz", name: "Taylor Fritz", country: "USA", tour: "atp", leagueId: "4464", keyword: "Fritz" },
   { id: "player_shelton", name: "Ben Shelton", country: "USA", tour: "atp", leagueId: "4464", keyword: "Shelton" },
-  { id: "player_faa", name: "Felix Auger-Aliassime", country: "Canada", tour: "atp", leagueId: "4464", keyword: "Auger-Aliassime" },
+  { id: "player_faa", name: "Felix Auger-Aliassime", country: "Canada", tour: "atp", leagueId: "4464", keyword: "Aliassime" },
   { id: "player_bublik", name: "Alexander Bublik", country: "Kazakhstan", tour: "atp", leagueId: "4464", keyword: "Bublik" },
   // ATP Grand Slam winners outside top 10
   { id: "player_medvedev", name: "Daniil Medvedev", country: "Russia", tour: "atp", leagueId: "4464", keyword: "Medvedev" },
@@ -102,7 +102,7 @@ export const TENNIS_PLAYERS: TennisPlayer[] = [
   { id: "player_svitolina", name: "Elina Svitolina", country: "Ukraine", tour: "wta", leagueId: "4517", keyword: "Svitolina" },
   { id: "player_mboko", name: "Victoria Mboko", country: "Canada", tour: "wta", leagueId: "4517", keyword: "Mboko" },
   // WTA Grand Slam winners outside top 10
-  { id: "player_keys", name: "Madison Keys", country: "USA", tour: "wta", leagueId: "4517", keyword: "Keys" },
+  { id: "player_keys", name: "Madison Keys", country: "USA", tour: "wta", leagueId: "4517", keyword: "Madison Keys" },
   { id: "player_osaka", name: "Naomi Osaka", country: "Japan", tour: "wta", leagueId: "4517", keyword: "Osaka" },
   { id: "player_raducanu", name: "Emma Raducanu", country: "United Kingdom", tour: "wta", leagueId: "4517", keyword: "Raducanu" },
   { id: "player_andreescu", name: "Bianca Andreescu", country: "Canada", tour: "wta", leagueId: "4517", keyword: "Andreescu" },
@@ -123,6 +123,21 @@ export const LEAGUE_CONFIG_MAP: Record<string, { season: string; totalRounds: nu
     sport.leagues.map((l) => [l.id, { season: l.season, totalRounds: l.totalRounds }])
   )
 );
+
+export const SPORT_COLORS: Record<string, { accent: string; lightHex: string; light: string; text: string; border: string }> = {
+  football:   { accent: "#16a34a", lightHex: "#f0fdf4", light: "bg-green-50",  text: "text-green-700",  border: "border-green-600" },
+  basketball: { accent: "#ea580c", lightHex: "#fff7ed", light: "bg-orange-50", text: "text-orange-700", border: "border-orange-600" },
+  cricket:    { accent: "#0d9488", lightHex: "#f0fdfa", light: "bg-teal-50",   text: "text-teal-700",   border: "border-teal-600" },
+  tennis:     { accent: "#65a30d", lightHex: "#f7fee7", light: "bg-lime-50",   text: "text-lime-700",   border: "border-lime-600" },
+};
+
+export const FOOTBALL_REGIONS: Record<string, string> = {
+  "4328": "Europe", "4335": "Europe", "4331": "Europe", "4332": "Europe", "4334": "Europe",
+  "4337": "Europe", "4344": "Europe", "4330": "Europe", "4339": "Europe", "4355": "Europe",
+  "4480": "European Competitions", "4481": "European Competitions",
+  "4346": "Americas", "4351": "Americas", "4406": "Americas", "4350": "Americas",
+  "4396": "Middle East",
+};
 
 export const DEFAULT_PREFERENCES = {
   selectedSports: [] as string[],

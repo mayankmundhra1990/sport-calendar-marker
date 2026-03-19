@@ -10,6 +10,7 @@ export function useEvents(sportFilter?: string, teamFilter?: string | null) {
   const [allEvents, setAllEvents] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [refetchKey, setRefetchKey] = useState(0);
 
   // Collect league configs that contain selected teams
   const relevantLeagues = useMemo(() => {
@@ -95,7 +96,7 @@ export function useEvents(sportFilter?: string, teamFilter?: string | null) {
       });
 
     return () => { cancelled = true; };
-  }, [relevantLeagues]);
+  }, [relevantLeagues, refetchKey]);
 
   // Filter events to only include upcoming matches involving selected teams/players
   const filteredEvents = useMemo(() => {
@@ -152,5 +153,7 @@ export function useEvents(sportFilter?: string, teamFilter?: string | null) {
       .sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
   }, [allEvents, preferences.selectedTeams, preferences.teamDetails, sportFilter, teamFilter]);
 
-  return { events: filteredEvents, loading, error };
+  const refetch = () => setRefetchKey((k) => k + 1);
+
+  return { events: filteredEvents, loading, error, refetch };
 }
