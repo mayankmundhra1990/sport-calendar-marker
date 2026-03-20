@@ -3,6 +3,7 @@ import { Geist } from "next/font/google";
 import "./globals.css";
 import { PreferencesProvider } from "@/context/PreferencesContext";
 import Navbar from "@/components/Navbar";
+import ServerSyncProvider from "@/components/ServerSyncProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,6 +33,7 @@ export default function RootLayout({
           Skip to content
         </a>
         <PreferencesProvider>
+          <ServerSyncProvider />
           <Navbar />
           <main id="main-content" className="mx-auto max-w-6xl px-4 py-8">
             {children}

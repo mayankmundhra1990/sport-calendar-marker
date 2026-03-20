@@ -8,6 +8,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@netlify/functions": "^5.1.5",
     "@netlify/plugin-nextjs": "^5.15.9",
     "@supabase/supabase-js": "^2.99.1",
     "clsx": "^2.1.1",
