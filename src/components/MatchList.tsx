@@ -16,7 +16,6 @@ function formatDateHeader(dateStr: string): string {
 }
 
 export default function MatchList({ matches }: MatchListProps) {
-  // Group by date
   const grouped = matches.reduce<Record<string, Match[]>>((acc, match) => {
     const key = match.date;
     if (!acc[key]) acc[key] = [];
@@ -27,13 +26,13 @@ export default function MatchList({ matches }: MatchListProps) {
   const sortedDates = Object.keys(grouped).sort();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {sortedDates.map((date) => (
         <div key={date}>
-          <h3 className="sticky top-[57px] z-10 bg-gray-50/95 backdrop-blur-sm text-sm font-semibold text-gray-500 uppercase tracking-wide py-2 mb-2 -mx-4 px-4">
+          <h3 className="sticky top-[57px] z-10 bg-gray-50/95 backdrop-blur-sm text-xs font-semibold text-gray-500 uppercase tracking-wide py-1.5 mb-1.5 -mx-4 px-4">
             {formatDateHeader(date)}
           </h3>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
             {grouped[date].map((match) => (
               <MatchCard key={match.id} match={match} />
             ))}

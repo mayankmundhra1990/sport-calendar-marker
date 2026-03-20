@@ -13,13 +13,10 @@ interface TeamBrowserProps {
 // Skeleton loader for team cards
 function TeamCardSkeleton() {
   return (
-    <div className="flex items-center gap-3 p-3 rounded-xl border border-gray-100 bg-white">
-      <div className="w-10 h-10 rounded-full bg-gray-200 animate-pulse flex-shrink-0" />
-      <div className="flex-1 min-w-0 space-y-2">
-        <div className="h-3.5 bg-gray-200 animate-pulse rounded w-3/4" />
-        <div className="h-3 bg-gray-200 animate-pulse rounded w-1/2" />
-      </div>
-      <div className="w-7 h-7 rounded-full bg-gray-200 animate-pulse flex-shrink-0" />
+    <div className="flex flex-col items-center gap-1 p-2 pt-2.5 rounded-lg border border-gray-100 bg-white">
+      <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse flex-shrink-0" />
+      <div className="h-2.5 bg-gray-200 animate-pulse rounded w-3/4" />
+      <div className="w-5 h-5 rounded-full bg-gray-200 animate-pulse" />
     </div>
   );
 }
@@ -56,7 +53,7 @@ export default function TeamBrowser({ leagueName }: TeamBrowserProps) {
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      <div className="grid grid-cols-4 sm:grid-cols-5 lg:grid-cols-6 gap-2">
         {Array.from({ length: 6 }).map((_, i) => (
           <TeamCardSkeleton key={i} />
         ))}
@@ -108,7 +105,7 @@ export default function TeamBrowser({ leagueName }: TeamBrowserProps) {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="grid grid-cols-4 sm:grid-cols-5 lg:grid-cols-6 gap-2">
           {filtered.map((team) => (
             <TeamCard
               key={team.id}

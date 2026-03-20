@@ -62,7 +62,7 @@ export default function CalendarButtons({ match, isSynced }: CalendarButtonsProp
         <button
           onClick={handleDownloadIcs}
           disabled={downloading}
-          className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors min-h-[44px] disabled:opacity-60"
+          className="flex items-center gap-1 text-[10px] px-2 py-1 rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors disabled:opacity-60 relative before:absolute before:inset-[-6px] before:content-['']"
           aria-label={`Download .ics calendar file for ${match.homeTeam.name} vs ${match.awayTeam.name}`}
           title="Download .ics file — works with Apple Calendar, Outlook, and any calendar app"
         >

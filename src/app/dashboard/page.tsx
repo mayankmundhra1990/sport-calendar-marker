@@ -17,24 +17,23 @@ const FILTERS = [{ id: "all", label: "All" }, ...SPORTS.map((s) => ({ id: s.id, 
 // Skeleton for match cards
 function MatchSkeleton() {
   return (
-    <div className="rounded-xl border border-gray-100 bg-white p-4 overflow-hidden">
-      <div className="flex items-start justify-between mb-3 gap-2">
-        <div className="h-7 w-16 bg-gray-200 animate-pulse rounded" />
-        <div className="h-5 w-24 bg-gray-200 animate-pulse rounded-full" />
+    <div className="rounded-lg border border-gray-100 bg-white p-2.5 overflow-hidden">
+      <div className="flex items-start justify-between mb-1.5 gap-1">
+        <div className="h-4 w-10 bg-gray-200 animate-pulse rounded" />
+        <div className="h-3 w-16 bg-gray-200 animate-pulse rounded-full" />
       </div>
-      <div className="flex items-center justify-between gap-3 mb-3">
-        <div className="flex items-center gap-2 flex-1">
-          <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse flex-shrink-0" />
-          <div className="h-4 w-24 bg-gray-200 animate-pulse rounded" />
+      <div className="flex items-center justify-between gap-1.5 mb-1.5">
+        <div className="flex items-center gap-1 flex-1">
+          <div className="w-5 h-5 rounded-full bg-gray-200 animate-pulse flex-shrink-0" />
+          <div className="h-3 w-14 bg-gray-200 animate-pulse rounded" />
         </div>
-        <div className="h-3 w-5 bg-gray-200 animate-pulse rounded" />
-        <div className="flex items-center gap-2 flex-1 flex-row-reverse">
-          <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse flex-shrink-0" />
-          <div className="h-4 w-20 bg-gray-200 animate-pulse rounded" />
+        <div className="h-2.5 w-4 bg-gray-200 animate-pulse rounded" />
+        <div className="flex items-center gap-1 flex-1 flex-row-reverse">
+          <div className="w-5 h-5 rounded-full bg-gray-200 animate-pulse flex-shrink-0" />
+          <div className="h-3 w-14 bg-gray-200 animate-pulse rounded" />
         </div>
       </div>
-      <div className="h-3 w-40 bg-gray-200 animate-pulse rounded mb-3" />
-      <div className="h-9 w-28 bg-gray-200 animate-pulse rounded-lg" />
+      <div className="h-5 w-20 bg-gray-200 animate-pulse rounded-md" />
     </div>
   );
 }
@@ -125,7 +124,7 @@ export default function Dashboard() {
       </div>
 
       {loading ? (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
           {Array.from({ length: 4 }).map((_, i) => (
             <MatchSkeleton key={i} />
           ))}
