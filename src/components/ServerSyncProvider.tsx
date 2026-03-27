@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { usePreferencesContext } from "@/context/PreferencesContext";
 
 /**
- * Silently syncs the user's followed teams to Supabase whenever they change,
+ * Silently syncs the user's followed teams to Firestore whenever they change,
  * but only while Google Calendar is connected. This gives the daily cron job
  * an up-to-date list of teams to auto-sync new fixtures for.
  */

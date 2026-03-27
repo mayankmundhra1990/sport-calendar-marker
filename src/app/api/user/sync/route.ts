@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { supabase } from "@/lib/supabase";
+import { db } from "@/lib/firebase";
 import { getGoogleUserInfo, refreshAccessToken } from "@/lib/google-calendar";
 
 interface TeamPayload {
@@ -38,48 +38,49 @@ export async function POST(request: NextRequest) {
     const { id: googleId, email } = await getGoogleUserInfo(accessToken);
 
     // Upsert user with latest tokens
-    const { data: user, error: userError } = await supabase
-      .from("users")
-      .upsert(
-        {
-          google_id: googleId,
-          email,
-          access_token: accessToken,
-          refresh_token: tokens.refresh_token ?? null,
-          token_expiry: tokens.expiry_date ?? null,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "google_id" }
-      )
-      .select("id")
-      .single();
+    const userRef = db.collection("users").doc(googleId);
+    await userRef.set(
+      {
+        email,
+        access_token: accessToken,
+        refresh_token: tokens.refresh_token ?? null,
+        token_expiry: tokens.expiry_date ?? null,
+        updated_at: new Date().toISOString(),
+      },
+      { merge: true }
+    );
 
-    if (userError || !user) {
-      console.error("Failed to upsert user:", userError);
-      return NextResponse.json({ error: "db_error" }, { status: 500 });
+    // Check if created_at exists, set it if not
+    const userSnap = await userRef.get();
+    if (!userSnap.data()?.created_at) {
+      await userRef.update({ created_at: new Date().toISOString() });
     }
 
     const { teams }: { teams: TeamPayload[] } = await request.json();
 
-    // Replace all teams for this user
-    await supabase.from("user_teams").delete().eq("user_id", user.id);
+    // Delete all existing teams for this user
+    const teamsCollection = userRef.collection("teams");
+    const existingTeams = await teamsCollection.get();
+    const batch = db.batch();
+    existingTeams.docs.forEach((doc) => batch.delete(doc.ref));
+    await batch.commit();
 
+    // Insert new teams
     if (teams.length > 0) {
-      const { error: insertError } = await supabase.from("user_teams").insert(
-        teams.map((t) => ({
-          user_id: user.id,
-          team_id: t.teamId,
+      const insertBatch = db.batch();
+      for (const t of teams) {
+        const teamRef = teamsCollection.doc(t.teamId);
+        insertBatch.set(teamRef, {
           team_name: t.teamName,
           sport: t.sport,
           league_id: t.leagueId,
           league_name: t.leagueName,
           badge: t.badge ?? "",
           match_keyword: t.matchKeyword ?? null,
-        }))
-      );
-      if (insertError) {
-        console.error("Failed to insert user teams:", insertError);
+          created_at: new Date().toISOString(),
+        });
       }
+      await insertBatch.commit();
     }
 
     return NextResponse.json({ success: true });

@@ -5,12 +5,26 @@
  * and creates Google Calendar events for any matches not yet synced.
  */
 import type { Config } from "@netlify/functions";
-import { createClient } from "@supabase/supabase-js";
+import { initializeApp, getApps, cert } from "firebase-admin/app";
+import { getFirestore } from "firebase-admin/firestore";
 import { google } from "googleapis";
 import { getAllSeasonEvents } from "../../src/lib/sportsdb";
 import { getTennisFixtures } from "../../src/lib/allsportsapi";
 import { TENNIS_LEAGUE_IDS, SPORTS, DURATION_MINUTES } from "../../src/lib/constants";
 import type { Match } from "../../src/lib/types";
+
+// ─── Firebase init ──────────────────────────────────────────────────────────
+
+if (!getApps().length) {
+  initializeApp({
+    credential: cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+    }),
+  });
+}
+const db = getFirestore();
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -22,9 +36,9 @@ function getOAuth2Client() {
   );
 }
 
-async function refreshToken(refreshToken: string) {
+async function refreshToken(refreshTokenValue: string) {
   const client = getOAuth2Client();
-  client.setCredentials({ refresh_token: refreshToken });
+  client.setCredentials({ refresh_token: refreshTokenValue });
   const { credentials } = await client.refreshAccessToken();
   return credentials;
 }
@@ -55,42 +69,67 @@ async function createCalendarEvent(accessToken: string, match: Match): Promise<s
 // ─── main handler ────────────────────────────────────────────────────────────
 
 export default async function handler() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!supabaseUrl || !supabaseKey) {
-    console.error("Missing Supabase env vars");
+  if (!process.env.FIREBASE_PROJECT_ID) {
+    console.error("Missing Firebase env vars");
     return;
   }
 
-  const db = createClient(supabaseUrl, supabaseKey);
   const today = new Date().toISOString().split("T")[0];
 
-  // 1. Fetch all users who have a refresh token (i.e. can act on their behalf)
-  const { data: users, error: usersError } = await db
-    .from("users")
-    .select("id, google_id, access_token, refresh_token, token_expiry")
-    .not("refresh_token", "is", null);
+  // 1. Fetch all users who have a refresh token
+  const usersSnap = await db
+    .collection("users")
+    .where("refresh_token", "!=", null)
+    .get();
 
-  if (usersError || !users?.length) {
-    console.log("No users to sync or DB error:", usersError?.message);
+  if (usersSnap.empty) {
+    console.log("No users to sync");
     return;
   }
+
+  const users = usersSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as Array<{
+    id: string;
+    access_token: string;
+    refresh_token: string;
+    token_expiry: number | null;
+  }>;
 
   console.log(`Syncing ${users.length} users`);
 
-  // 2. Pre-fetch events for each unique league (shared across all users)
-  const { data: allUserTeams } = await db
-    .from("user_teams")
-    .select("user_id, team_id, sport, league_id, league_name, match_keyword");
+  // 2. Pre-fetch teams for all users and build league map
+  interface UserTeam {
+    user_id: string;
+    team_id: string;
+    sport: string;
+    league_id: string;
+    league_name: string;
+    match_keyword: string | null;
+  }
 
-  if (!allUserTeams?.length) {
+  const allUserTeams: UserTeam[] = [];
+
+  for (const user of users) {
+    const teamsSnap = await db.collection("users").doc(user.id).collection("teams").get();
+    for (const doc of teamsSnap.docs) {
+      const data = doc.data();
+      allUserTeams.push({
+        user_id: user.id,
+        team_id: doc.id,
+        sport: data.sport,
+        league_id: data.league_id,
+        league_name: data.league_name,
+        match_keyword: data.match_keyword ?? null,
+      });
+    }
+  }
+
+  if (!allUserTeams.length) {
     console.log("No teams to sync");
     return;
   }
 
   // Build unique league list
-  const leagueMap = new Map<string, { leagueId: string; season: string; totalRounds: number; isTennis: boolean }>();
+  const leagueMap = new Map<string, { leagueId: string; season: string; totalRounds: number }>();
   let needsTennis = false;
 
   for (const team of allUserTeams) {
@@ -104,7 +143,6 @@ export default async function handler() {
       leagueId: team.league_id,
       season: leagueConfig?.season ?? "2025-2026",
       totalRounds: leagueConfig?.totalRounds ?? 38,
-      isTennis: false,
     });
   }
 
@@ -141,11 +179,11 @@ export default async function handler() {
       if (user.token_expiry && Date.now() > user.token_expiry) {
         const newCreds = await refreshToken(user.refresh_token);
         accessToken = newCreds.access_token!;
-        await db.from("users").update({
+        await db.collection("users").doc(user.id).update({
           access_token: accessToken,
           token_expiry: newCreds.expiry_date ?? null,
           updated_at: new Date().toISOString(),
-        }).eq("id", user.id);
+        });
       }
 
       // Get this user's teams
@@ -153,11 +191,12 @@ export default async function handler() {
       if (!userTeams.length) continue;
 
       // Get match IDs already synced for this user
-      const { data: synced } = await db
-        .from("synced_events")
-        .select("match_id")
-        .eq("user_id", user.id);
-      const syncedMatchIds = new Set((synced ?? []).map((s: { match_id: string }) => s.match_id));
+      const syncedSnap = await db
+        .collection("users")
+        .doc(user.id)
+        .collection("synced_events")
+        .get();
+      const syncedMatchIds = new Set(syncedSnap.docs.map((doc) => doc.id));
 
       // Find new matches for each team
       const newEvents: { match: Match; teamId: string }[] = [];
@@ -166,7 +205,6 @@ export default async function handler() {
         let candidates: Match[];
 
         if (TENNIS_LEAGUE_IDS.has(team.league_id)) {
-          // Tennis: match by keyword
           const keyword = team.match_keyword?.toLowerCase();
           if (!keyword) continue;
           candidates = tennisEvents.filter((m) => {
@@ -174,7 +212,6 @@ export default async function handler() {
             return text.includes(keyword);
           });
         } else {
-          // Team sport: match by team ID
           candidates = (leagueEvents.get(team.league_id) ?? []).filter(
             (m) => m.homeTeam.id === team.team_id || m.awayTeam.id === team.team_id
           );
@@ -183,7 +220,7 @@ export default async function handler() {
         for (const match of candidates) {
           if (!syncedMatchIds.has(match.id)) {
             newEvents.push({ match, teamId: team.team_id });
-            syncedMatchIds.add(match.id); // avoid duplicates within this batch
+            syncedMatchIds.add(match.id);
           }
         }
       }
@@ -196,36 +233,37 @@ export default async function handler() {
       console.log(`User ${user.id}: syncing ${newEvents.length} new events`);
 
       // Create calendar events in batches of 5
-      const toInsert: { user_id: string; team_id: string; match_id: string; google_event_id: string; match_date: string }[] = [];
-
       for (let i = 0; i < newEvents.length; i += 5) {
-        const batch = newEvents.slice(i, i + 5);
+        const batchItems = newEvents.slice(i, i + 5);
         const results = await Promise.allSettled(
-          batch.map(({ match }) => createCalendarEvent(accessToken, match))
+          batchItems.map(({ match }) => createCalendarEvent(accessToken, match))
         );
+
+        const writeBatch = db.batch();
         for (let j = 0; j < results.length; j++) {
           const result = results[j];
           if (result.status === "fulfilled") {
-            toInsert.push({
-              user_id: user.id,
-              team_id: batch[j].teamId,
-              match_id: batch[j].match.id,
+            const eventRef = db
+              .collection("users")
+              .doc(user.id)
+              .collection("synced_events")
+              .doc(batchItems[j].match.id);
+            writeBatch.set(eventRef, {
+              team_id: batchItems[j].teamId,
               google_event_id: result.value,
-              match_date: batch[j].match.date,
+              match_date: batchItems[j].match.date,
+              created_at: new Date().toISOString(),
             });
           } else {
-            console.error(`Failed to create event ${batch[j].match.id}:`, result.reason);
+            console.error(`Failed to create event ${batchItems[j].match.id}:`, result.reason);
           }
         }
+        await writeBatch.commit();
       }
 
-      if (toInsert.length) {
-        await db.from("synced_events").insert(toInsert);
-        console.log(`User ${user.id}: inserted ${toInsert.length} synced events`);
-      }
+      console.log(`User ${user.id}: sync complete`);
     } catch (err) {
       console.error(`Failed processing user ${user.id}:`, err);
-      // Continue to next user
     }
   }
 
