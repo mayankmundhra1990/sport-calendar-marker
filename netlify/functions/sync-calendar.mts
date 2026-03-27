@@ -11,6 +11,24 @@ import { google } from "googleapis";
 import { getAllSeasonEvents } from "../../src/lib/sportsdb";
 import { getTennisFixtures } from "../../src/lib/allsportsapi";
 import { TENNIS_LEAGUE_IDS, SPORTS, DURATION_MINUTES } from "../../src/lib/constants";
+
+// ─── cache helpers ──────────────────────────────────────────────────────────
+
+async function getMatchesFromCache(
+  firestoreDb: FirebaseFirestore.Firestore,
+  leagueId: string
+): Promise<Match[] | null> {
+  try {
+    const doc = await firestoreDb.doc(`cached_matches/${leagueId}`).get();
+    if (doc.exists) {
+      const data = doc.data();
+      if (data && data.matches?.length > 0) return data.matches as Match[];
+    }
+  } catch {
+    // silently fall through to live fetch
+  }
+  return null;
+}
 import type { Match } from "../../src/lib/types";
 
 // ─── Firebase init ──────────────────────────────────────────────────────────
@@ -146,26 +164,42 @@ export default async function handler() {
     });
   }
 
-  // 3. Fetch events per unique league
+  // 3. Fetch events per unique league (from Firestore cache, fallback to live API)
   const leagueEvents = new Map<string, Match[]>();
 
   for (const [leagueId, config] of leagueMap) {
-    console.log(`Fetching league ${leagueId}...`);
+    console.log(`Loading league ${leagueId}...`);
     try {
-      const events = await getAllSeasonEvents(leagueId, config.season, config.totalRounds);
-      leagueEvents.set(leagueId, events.filter((e) => e.date >= today));
+      const cached = await getMatchesFromCache(db, leagueId);
+      if (cached) {
+        leagueEvents.set(leagueId, cached.filter((e) => e.date >= today));
+      } else {
+        console.log(`  Cache miss — fetching live for ${leagueId}`);
+        const events = await getAllSeasonEvents(leagueId, config.season, config.totalRounds);
+        leagueEvents.set(leagueId, events.filter((e) => e.date >= today));
+      }
     } catch (err) {
       console.error(`Failed fetching league ${leagueId}:`, err);
       leagueEvents.set(leagueId, []);
     }
   }
 
-  // Fetch tennis fixtures once if any user follows a tennis player
+  // Fetch tennis fixtures (from cache, fallback to live API)
   let tennisEvents: Match[] = [];
   if (needsTennis) {
     try {
-      const all = await getTennisFixtures();
-      tennisEvents = all.filter((e) => e.date >= today);
+      for (const tennisId of ["4464", "4517"]) {
+        const cached = await getMatchesFromCache(db, tennisId);
+        if (cached) {
+          tennisEvents.push(...cached.filter((e) => e.date >= today));
+        }
+      }
+      // Fallback to live if cache was empty
+      if (tennisEvents.length === 0) {
+        console.log("Tennis cache miss — fetching live");
+        const all = await getTennisFixtures();
+        tennisEvents = all.filter((e) => e.date >= today);
+      }
     } catch (err) {
       console.error("Failed fetching tennis fixtures:", err);
     }
